@@ -19,7 +19,6 @@ import cv2
 
 # from utils.fid_score import calculate_fid_given_paths
 from utils.torch_fid_score import get_fid
-# from utils.inception_score import get_inception_scorepython exps/dist1_new_church256.py --node 0022 --rank 0sample
 
 logger = logging.getLogger(__name__)
 
@@ -151,51 +150,8 @@ def train_d(args, gen_net: nn.Module, dis_net: nn.Module, dis_optimizer, train_l
             dis_optimizer.step()
             dis_optimizer.zero_grad()
 
-            writer.add_scalar('d_loss', d_loss.item(), global_steps) if args.rank == 0 else 0
+            writer.add_scalar('d_loss', d_loss.item(), global_steps)
 
-
-#             # adjust learning rate
-#             if schedulers:
-#                 gen_scheduler, dis_scheduler = schedulers
-# #                 g_lr = gen_scheduler.step(global_steps)
-#                 d_lr = dis_scheduler.step(global_steps)
-# #                 writer.add_scalar('LR/g_lr', g_lr, global_steps)
-#                 writer.add_scalar('LR/d_lr', d_lr, global_steps)
-
-#             # moving average weight
-#             ema_nimg = args.ema_kimg * 1000
-#             cur_nimg = args.dis_batch_size * args.world_size * global_steps
-#             if args.ema_warmup != 0:
-#                 ema_nimg = min(ema_nimg, cur_nimg * args.ema_warmup)
-#                 ema_beta = 0.5 ** (float(args.dis_batch_size * args.world_size) / max(ema_nimg, 1e-8))
-#             else:
-#                 ema_beta = args.ema
-                
-#             # moving average weight
-#             for p, avg_p in zip(gen_net.parameters(), gen_avg_param):
-#                 cpu_p = deepcopy(p)
-#                 avg_p.mul_(ema_beta).add_(1. - ema_beta, cpu_p.cpu().data)
-#                 del cpu_p
-
-# #             writer.add_scalar('g_loss', g_loss.item(), global_steps) if args.rank == 0 else 0
-# #             gen_step += 1
-
-#         # verbose
-#         if gen_step and iter_idx % args.print_freq == 0 and args.rank == 0:
-#             sample_imgs = torch.cat((gen_imgs[:16], real_imgs[:16]), dim=0)
-# #             scale_factor = args.img_size // int(sample_imgs.size(3))
-# #             sample_imgs = torch.nn.functional.interpolate(sample_imgs, scale_factor=2)
-# #             img_grid = make_grid(sample_imgs, nrow=4, normalize=True, scale_each=True)
-# #             save_image(sample_imgs, f'sampled_images_{args.exp_name}.jpg', nrow=4, normalize=True, scale_each=True)
-#             # writer.add_image(f'sampled_images_{args.exp_name}', img_grid, global_steps)
-#             tqdm.write(
-#                 "[Epoch %d/%d] [Batch %d/%d] [D loss: %f] [ema: %f] " %
-#                 (epoch, args.max_epoch, iter_idx % len(train_loader), len(train_loader), d_loss.item(), ema_beta))
-#             del gen_imgs
-#             del real_imgs
-#             del fake_validity
-#             del real_validity
-#             del d_loss
         tqdm.write( "[Epoch %d/%d] [Batch %d/%d] [D loss: %f]" %
         (epoch, args.max_epoch, iter_idx % len(train_loader), len(train_loader), d_loss.item()))
     
@@ -286,7 +242,7 @@ def train(args, gen_net: nn.Module, dis_net: nn.Module, gen_optimizer, dis_optim
             dis_optimizer.step()
             dis_optimizer.zero_grad()
 
-            writer.add_scalar('d_loss', d_loss.item(), global_steps) if args.rank == 0 else 0
+            writer.add_scalar('d_loss', d_loss.item(), global_steps)
 
         # -----------------
         #  Train Generator
@@ -342,10 +298,10 @@ def train(args, gen_net: nn.Module, dis_net: nn.Module, gen_optimizer, dis_optim
 
             # moving average weight
             ema_nimg = args.ema_kimg * 1000
-            cur_nimg = args.dis_batch_size * args.world_size * global_steps
+            cur_nimg = args.dis_batch_size * global_steps
             if args.ema_warmup != 0:
                 ema_nimg = min(ema_nimg, cur_nimg * args.ema_warmup)
-                ema_beta = 0.5 ** (float(args.dis_batch_size * args.world_size) / max(ema_nimg, 1e-8))
+                ema_beta = 0.5 ** (float(args.dis_batch_size) / max(ema_nimg, 1e-8))
             else:
                 ema_beta = args.ema
                 
@@ -355,11 +311,11 @@ def train(args, gen_net: nn.Module, dis_net: nn.Module, gen_optimizer, dis_optim
                 avg_p.mul_(ema_beta).add_(1. - ema_beta, cpu_p.cpu().data)
                 del cpu_p
 
-            writer.add_scalar('g_loss', g_loss.item(), global_steps) if args.rank == 0 else 0
+            writer.add_scalar('g_loss', g_loss.item(), global_steps)
             gen_step += 1
 
         # verbose
-        if gen_step and iter_idx % args.print_freq == 0 and args.rank == 0:
+        if gen_step and iter_idx % args.print_freq == 0:
             sample_imgs = torch.cat((gen_imgs[:16], real_imgs[:16]), dim=0)
 #             scale_factor = args.img_size // int(sample_imgs.size(3))
 #             sample_imgs = torch.nn.functional.interpolate(sample_imgs, scale_factor=2)
@@ -418,60 +374,21 @@ def validate(args, fixed_z, fid_stat, epoch, gen_net: nn.Module, writer_dict, cl
     # eval mode
     gen_net.eval()
 
-#     generate images
-#     with torch.no_grad():
-#         sample_imgs = gen_net(fixed_z, epoch)
-#     img_grid = make_grid(sample_imgs, nrow=5, normalize=True, scale_each=True)
-
-#     get fid and inception score
-#     if args.gpu == 0:
-#         fid_buffer_dir = os.path.join(args.path_helper['sample_path'], 'fid_buffer')
-#         os.makedirs(fid_buffer_dir, exist_ok=True) if args.gpu == 0 else 0
-
-#     eval_iter = args.num_eval_imgs // args.eval_batch_size
-#     img_list = list()
-#     for iter_idx in tqdm(range(eval_iter), desc='sample images'):
-#         z = torch.cuda.FloatTensor(np.random.normal(0, 1, (args.eval_batch_size, args.latent_dim)))
-    
-#         # Generate a batch of images
-#         gen_imgs = gen_net(z, epoch).mul_(127.5).add_(127.5).clamp_(0.0, 255.0).permute(0, 2, 3, 1).to('cpu',
-#                                                                                                 torch.uint8).numpy()
-#         for img_idx, img in enumerate(gen_imgs):
-#             file_name = os.path.join(fid_buffer_dir, f'iter{iter_idx}_b{img_idx}.png')
-#             imsave(file_name, img)
-#         img_list.extend(list(gen_imgs))
-
-#     get inception score
-    logger.info('=> calculate inception score') if args.rank == 0 else 0
-    if args.rank == 0:
-#         mean, std = get_inception_score(img_list)
-        mean, std = 0, 0
-    else:
-        mean, std = 0, 0
-    print(f"Inception score: {mean}") if args.rank == 0 else 0
-#     mean, std = 0, 0
+    # get inception score
+    logger.info('=> calculate inception score')
+    mean, std = 0, 0
+    print(f"Inception score: {mean}")
     # get fid score
-    print('=> calculate fid score') if args.rank == 0 else 0
-    if args.rank == 0:
-        fid_score = get_fid(args, fid_stat, epoch, gen_net, args.num_eval_imgs, args.gen_batch_size, args.eval_batch_size, writer_dict=writer_dict, cls_idx=None)
-    else:
-        fid_score = 10000
-    # fid_score = 10000
-    print(f"FID score: {fid_score}") if args.rank == 0 else 0
-    
-#     if args.gpu == 0:
-#         if clean_dir:
-#             os.system('rm -r {}'.format(fid_buffer_dir))
-#         else:
-#             logger.info(f'=> sampled images are saved to {fid_buffer_dir}')
+    print('=> calculate fid score')
+ 
+    fid_score = get_fid(args, fid_stat, epoch, gen_net, args.num_eval_imgs, args.gen_batch_size, args.eval_batch_size, writer_dict=writer_dict, cls_idx=None)
+    print(f"FID score: {fid_score}")
 
-#     writer.add_image('sampled_images', img_grid, global_steps)
-    if args.rank == 0:
-        writer.add_scalar('Inception_score/mean', mean, global_steps)
-        writer.add_scalar('Inception_score/std', std, global_steps)
-        writer.add_scalar('FID_score', fid_score, global_steps)
+    writer.add_scalar('Inception_score/mean', mean, global_steps)
+    writer.add_scalar('Inception_score/std', std, global_steps)
+    writer.add_scalar('FID_score', fid_score, global_steps)
 
-        writer_dict['valid_global_steps'] = global_steps + 1
+    writer_dict['valid_global_steps'] = global_steps + 1
 
     return mean, fid_score
 

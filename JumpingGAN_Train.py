@@ -5,7 +5,6 @@ import argparse
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--rank', type=str, default="0")
     parser.add_argument('--node', type=str, default="0015")
     opt = parser.parse_args()
 
@@ -15,10 +14,6 @@ args = parse_args()
 os.system(f"CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python train_GAN.py \
 -gen_bs 16 \
 -dis_bs 16 \
---dist-url 'tcp://localhost:4321' \
---dist-backend 'nccl' \
---world-size 1 \
---rank {args.rank} \
 --dataset UniMiB \
 --bottom_width 8 \
 --max_iter 500000 \

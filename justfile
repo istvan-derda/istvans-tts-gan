@@ -1,2 +1,2 @@
 train:
-    python JumpingGAN_Train.py
+    python RunningGAN_Train.py
