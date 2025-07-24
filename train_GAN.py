@@ -39,11 +39,9 @@ def main():
         torch.backends.cudnn.benchmark = False
         torch.backends.cudnn.deterministic = True
 
-
-    ngpus_per_node = torch.cuda.device_count()
-    main_worker(ngpus_per_node, args)
+    main_worker(args)
         
-def main_worker(ngpus_per_node, args):
+def main_worker(args):
 
     # weight init
     def weights_init(m):
