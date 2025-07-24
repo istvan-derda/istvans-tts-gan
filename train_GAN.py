@@ -5,17 +5,14 @@ from __future__ import print_function
 import cfg
 from dataLoader import *
 from GANModels import * 
-from functions import train, train_d, validate, save_samples, LinearLrDecay, load_params, copy_params, cur_stages
+from functions import train, LinearLrDecay, load_params, copy_params, cur_stages
 from utils.utils import set_log_dir, save_checkpoint, create_logger
 
 import torch
-import torch.multiprocessing as mp
 from torch.utils import data
 import os
 import numpy as np
-import torch.nn as nn
 from torch.utils.tensorboard import SummaryWriter
-from tqdm import tqdm
 from copy import deepcopy
 from adamw import AdamW
 import random 
@@ -28,6 +25,17 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def main():
+    train_data = load_train_data()
+
+    train_tts_gan(train_data)
+
+
+def load_train_data():
+    args = cfg.parse_args()
+    return unimib_load_dataset(incl_xyz_accel = True, incl_rms_accel = False, incl_val_group = False, is_normalize = True, one_hot_encode = False, data_mode = 'Train', single_class = True, class_name = args.class_name, augment_times=args.augment_times)
+
+
+def train_tts_gan(train_data):
     args = cfg.parse_args()
     
     if args.seed is not None:
@@ -38,22 +46,6 @@ def main():
         random.seed(args.random_seed)
         torch.backends.cudnn.benchmark = False
         torch.backends.cudnn.deterministic = True
-
-    # weight init
-    def weights_init(m):
-        classname = m.__class__.__name__
-        if classname.find('Conv2d') != -1:
-            if args.init_type == 'normal':
-                nn.init.normal_(m.weight.data, 0.0, 0.02)
-            elif args.init_type == 'orth':
-                nn.init.orthogonal_(m.weight.data)
-            elif args.init_type == 'xavier_uniform':
-                nn.init.xavier_uniform(m.weight.data, 1.)
-            else:
-                raise NotImplementedError('{} unknown inital type'.format(args.init_type))
-        elif classname.find('BatchNorm2d') != -1:
-            nn.init.normal_(m.weight.data, 1.0, 0.02)
-            nn.init.constant_(m.bias.data, 0.0)
 
     # import network
     
@@ -81,8 +73,7 @@ def main():
     gen_scheduler = LinearLrDecay(gen_optimizer, args.g_lr, 0.0, 0, args.max_iter)
     dis_scheduler = LinearLrDecay(dis_optimizer, args.d_lr, 0.0, 0, args.max_iter)
 
-    train_set = unimib_load_dataset(incl_xyz_accel = True, incl_rms_accel = False, incl_val_group = False, is_normalize = True, one_hot_encode = False, data_mode = 'Train', single_class = True, class_name = args.class_name, augment_times=args.augment_times)
-    train_loader = data.DataLoader(train_set, batch_size=args.batch_size, num_workers=args.num_workers, shuffle = True)
+    train_loader = data.DataLoader(train_data, batch_size=args.batch_size, num_workers=args.num_workers, shuffle = True)
  
     if args.max_iter:
         args.max_epoch = np.ceil(args.max_iter / len(train_loader))
@@ -118,7 +109,6 @@ def main():
         fixed_z = checkpoint['fixed_z']
 
         args.path_helper = checkpoint['path_helper']
-        logger = create_logger(args.path_helper['log_path'])
         print(f'=> loaded checkpoint {checkpoint_file} (epoch {start_epoch})')
         writer = SummaryWriter(args.path_helper['log_path'])
         del checkpoint
@@ -126,7 +116,6 @@ def main():
     # create new log dir
         assert args.exp_name
         args.path_helper = set_log_dir('logs', args.exp_name)
-        logger = create_logger(args.path_helper['log_path'])
         writer = SummaryWriter(args.path_helper['log_path'])
     
     writer_dict = {
@@ -144,9 +133,7 @@ def main():
         
         train(args, gen_net, dis_net, gen_optimizer, dis_optimizer, gen_avg_param, train_loader, epoch, writer_dict,fixed_z, lr_schedulers)
         
-
-
-#TO DO: Validate add synthetic data plot in tensorboard 
+        #TO DO: Validate add synthetic data plot in tensorboard 
         gen_net.eval()
         plot_buf = gen_plot(gen_net, epoch, args.class_name)
         image = PIL.Image.open(plot_buf)
@@ -156,7 +143,7 @@ def main():
         is_best = False
         avg_gen_net = deepcopy(gen_net)
         load_params(avg_gen_net, gen_avg_param, args)
-# Add module in model saving code exp'gen_net.module.state_dict()' to solve the model loading unpaired name problem
+        # Add module in model saving code exp'gen_net.module.state_dict()' to solve the model loading unpaired name problem
         save_checkpoint({
             'epoch': epoch + 1,
             'gen_model': args.gen_model,
@@ -171,6 +158,8 @@ def main():
             'fixed_z': fixed_z
         }, is_best, args.path_helper['ckpt_path'], filename="checkpoint")
         del avg_gen_net
+
+    return gen_net
         
 def gen_plot(gen_net, epoch, class_name):
     """Create a pyplot plot and save to buffer."""
