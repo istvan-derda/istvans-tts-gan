@@ -3,14 +3,10 @@ from __future__ import division
 from __future__ import print_function
 
 import cfg
-# import models_search
-# import datasets
 from dataLoader import *
 from GANModels import * 
 from functions import train, train_d, validate, save_samples, LinearLrDecay, load_params, copy_params, cur_stages
 from utils.utils import set_log_dir, save_checkpoint, create_logger
-# from utils.inception_score import _init_inception
-# from utils.fid_score import create_inception_graph, check_or_download_inception
 
 import torch
 import torch.multiprocessing as mp
@@ -18,7 +14,6 @@ from torch.utils import data
 import os
 import numpy as np
 import torch.nn as nn
-# from tensorboardX import SummaryWriter
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 from copy import deepcopy
@@ -29,17 +24,11 @@ import io
 import PIL.Image
 from torchvision.transforms import ToTensor
 
-# torch.backends.cudnn.enabled = True
-# torch.backends.cudnn.benchmark = True
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def main():
     args = cfg.parse_args()
-    
-#     _init_inception()
-#     inception_path = check_or_download_inception(None)
-#     create_inception_graph(inception_path)
     
     if args.seed is not None:
         torch.manual_seed(args.random_seed)
@@ -76,15 +65,6 @@ def main_worker(gpu, ngpus_per_node, args):
                 nn.init.xavier_uniform(m.weight.data, 1.)
             else:
                 raise NotImplementedError('{} unknown inital type'.format(args.init_type))
-#         elif classname.find('Linear') != -1:
-#             if args.init_type == 'normal':
-#                 nn.init.normal_(m.weight.data, 0.0, 0.02)
-#             elif args.init_type == 'orth':
-#                 nn.init.orthogonal_(m.weight.data)
-#             elif args.init_type == 'xavier_uniform':
-#                 nn.init.xavier_uniform(m.weight.data, 1.)
-#             else:
-#                 raise NotImplementedError('{} unknown inital type'.format(args.init_type))
         elif classname.find('BatchNorm2d') != -1:
             nn.init.normal_(m.weight.data, 1.0, 0.02)
             nn.init.constant_(m.bias.data, 0.0)
@@ -122,29 +102,9 @@ def main_worker(gpu, ngpus_per_node, args):
     gen_scheduler = LinearLrDecay(gen_optimizer, args.g_lr, 0.0, 0, args.max_iter * args.n_critic)
     dis_scheduler = LinearLrDecay(dis_optimizer, args.d_lr, 0.0, 0, args.max_iter * args.n_critic)
 
-    # fid stat 
-#     if args.dataset.lower() == 'cifar10':
-#         fid_stat = 'fid_stat/fid_stats_cifar10_train.npz'
-#     elif args.dataset.lower() == 'stl10':
-#         fid_stat = 'fid_stat/stl10_train_unlabeled_fid_stats_48.npz'
-#     elif args.fid_stat is not None:
-#         fid_stat = args.fid_stat
-#     else:
-#         raise NotImplementedError(f'no fid stat for {args.dataset.lower()}')
-#     assert os.path.exists(fid_stat)
-
-
     # epoch number for dis_net
     args.max_epoch = args.max_epoch * args.n_critic
-#     dataset = datasets.ImageDataset(args, cur_img_size=8)
-#     train_loader = dataset.train
-#     train_sampler = dataset.train_sampler
-    
-#     train_set = unimib_load_dataset(incl_xyz_accel = True, incl_rms_accel = False, incl_val_group = False, one_hot_encode = False, data_mode = 'Train')
-#     test_set = unimib_load_dataset(incl_xyz_accel = True, incl_rms_accel = False, incl_val_group = False, one_hot_encode = False, data_mode = 'Test')
-#     train_loader = data.DataLoader(train_set, batch_size=args.dis_batch_size, num_workers=args.num_workers, shuffle=True)
-#     test_loader = data.DataLoader(test_set, batch_size=args.dis_batch_size, num_workers=args.num_workers, shuffle=True)
-    
+
     train_set = unimib_load_dataset(incl_xyz_accel = True, incl_rms_accel = False, incl_val_group = False, is_normalize = True, one_hot_encode = False, data_mode = 'Train', single_class = True, class_name = args.class_name, augment_times=args.augment_times)
     train_loader = data.DataLoader(train_set, batch_size=args.batch_size, num_workers=args.num_workers, shuffle = True)
     test_set = unimib_load_dataset(incl_xyz_accel = True, incl_rms_accel = False, incl_val_group = False, is_normalize = True, one_hot_encode = False, data_mode = 'Test', single_class = True, class_name = args.class_name)
@@ -180,15 +140,10 @@ def main_worker(gpu, ngpus_per_node, args):
         gen_optimizer.load_state_dict(checkpoint['gen_optimizer'])
         dis_optimizer.load_state_dict(checkpoint['dis_optimizer'])
         
-#         avg_gen_net = deepcopy(gen_net)
         gen_net.load_state_dict(checkpoint['avg_gen_state_dict'])
         gen_avg_param = copy_params(gen_net, mode='gpu')
         gen_net.load_state_dict(checkpoint['gen_state_dict'])
         fixed_z = checkpoint['fixed_z']
-#         del avg_gen_net
-#         gen_avg_param = list(p.cuda().to(f"cuda:{args.gpu}") for p in gen_avg_param)
-        
-        
 
         args.path_helper = checkpoint['path_helper']
         logger = create_logger(args.path_helper['log_path'])
@@ -210,18 +165,11 @@ def main_worker(gpu, ngpus_per_node, args):
 
     # train loop
     for epoch in range(int(start_epoch), int(args.max_epoch)):
-#         train_sampler.set_epoch(epoch)
         lr_schedulers = (gen_scheduler, dis_scheduler) if args.lr_decay else None
         cur_stage = cur_stages(epoch, args)
         print("cur_stage " + str(cur_stage))
         print(f"path: {args.path_helper['prefix']}")
         
-#         if (epoch+1) % 3 == 0:
-#             # train discriminator and generator both 
-#             train(args, gen_net, dis_net, gen_optimizer, dis_optimizer, gen_avg_param, train_loader, epoch, writer_dict,fixed_z, lr_schedulers)
-#         else:
-#             #only train discriminator 
-#             train_d(args, gen_net, dis_net, dis_optimizer, train_loader, epoch, writer_dict,fixed_z, lr_schedulers)
         train(args, gen_net, dis_net, gen_optimizer, dis_optimizer, gen_avg_param, train_loader, epoch, writer_dict,fixed_z, lr_schedulers)
         
         if args.show:
@@ -236,7 +184,6 @@ def main_worker(gpu, ngpus_per_node, args):
         plot_buf = gen_plot(gen_net, epoch, args.class_name)
         image = PIL.Image.open(plot_buf)
         image = ToTensor()(image).unsqueeze(0)
-        #writer = SummaryWriter(comment='synthetic signals')
         writer.add_image('Image', image[0], epoch)
         
         is_best = False
