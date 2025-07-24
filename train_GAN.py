@@ -39,19 +39,11 @@ def main():
         torch.backends.cudnn.benchmark = False
         torch.backends.cudnn.deterministic = True
 
-    if args.gpu is not None:
-        warnings.warn('You have chosen a specific GPU. This will completely '
-                      'disable data parallelism.')
-
 
     ngpus_per_node = torch.cuda.device_count()
-    main_worker(args.gpu, ngpus_per_node, args)
+    main_worker(ngpus_per_node, args)
         
-def main_worker(gpu, ngpus_per_node, args):
-    args.gpu = gpu
-    
-    if args.gpu is not None:
-        print("Use GPU: {} for training".format(args.gpu))
+def main_worker(ngpus_per_node, args):
 
     # weight init
     def weights_init(m):
@@ -77,10 +69,6 @@ def main_worker(gpu, ngpus_per_node, args):
     print(dis_net)
     if not torch.cuda.is_available():
         print('using CPU, this will be slow')
-    elif args.gpu is not None:
-        torch.cuda.set_device(args.gpu)
-        gen_net.cuda(args.gpu)
-        dis_net.cuda(args.gpu)
     else:
         gen_net = torch.nn.DataParallel(gen_net).cuda()
         dis_net = torch.nn.DataParallel(dis_net).cuda()
@@ -130,7 +118,7 @@ def main_worker(gpu, ngpus_per_node, args):
         assert os.path.exists(args.load_path)
         checkpoint_file = os.path.join(args.load_path)
         assert os.path.exists(checkpoint_file)
-        loc = 'cuda:{}'.format(args.gpu)
+        loc = 'cuda:{}'.format(None)
         checkpoint = torch.load(checkpoint_file, map_location=loc)
         start_epoch = checkpoint['epoch']
         best_fid = checkpoint['best_fid']

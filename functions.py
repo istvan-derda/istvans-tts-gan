@@ -81,10 +81,10 @@ def train_d(args, gen_net: nn.Module, dis_net: nn.Module, dis_optimizer, train_l
         
 
         # Adversarial ground truths
-        real_imgs = imgs.type(torch.cuda.FloatTensor).cuda(args.gpu, non_blocking=True)
+        real_imgs = imgs.type(torch.cuda.FloatTensor).cuda(None, non_blocking=True)
 
         # Sample noise as generator input
-        z = torch.cuda.FloatTensor(np.random.normal(0, 1, (imgs.shape[0], args.latent_dim))).cuda(args.gpu, non_blocking=True)
+        z = torch.cuda.FloatTensor(np.random.normal(0, 1, (imgs.shape[0], args.latent_dim))).cuda(None, non_blocking=True)
 
         # ---------------------
         #  Train Discriminator
@@ -475,7 +475,6 @@ def load_params(model, new_param, args, mode="gpu"):
     if mode == "cpu":
         for p, new_p in zip(model.parameters(), new_param):
             cpu_p = deepcopy(new_p)
-#             p.data.copy_(cpu_p.cuda().to(f"cuda:{args.gpu}"))
             p.data.copy_(cpu_p.cuda().to("cpu"))
             del cpu_p
     
