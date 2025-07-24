@@ -39,10 +39,6 @@ def main():
         torch.backends.cudnn.benchmark = False
         torch.backends.cudnn.deterministic = True
 
-    main_worker(args)
-        
-def main_worker(args):
-
     # weight init
     def weights_init(m):
         classname = m.__class__.__name__
