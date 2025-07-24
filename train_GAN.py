@@ -58,14 +58,13 @@ def main():
     # import network
     
     gen_net = Generator()
-    print(gen_net)
     dis_net = Discriminator()
-    print(dis_net)
     if not torch.cuda.is_available():
         print('using CPU, this will be slow')
     else:
         gen_net = torch.nn.DataParallel(gen_net).cuda()
         dis_net = torch.nn.DataParallel(dis_net).cuda()
+    print(gen_net)
     print(dis_net)
         
 
@@ -81,11 +80,11 @@ def main():
         dis_optimizer = AdamW(filter(lambda p: p.requires_grad, dis_net.parameters()),
                                          args.g_lr, weight_decay=args.wd)
         
-    gen_scheduler = LinearLrDecay(gen_optimizer, args.g_lr, 0.0, 0, args.max_iter * args.n_critic)
-    dis_scheduler = LinearLrDecay(dis_optimizer, args.d_lr, 0.0, 0, args.max_iter * args.n_critic)
+    gen_scheduler = LinearLrDecay(gen_optimizer, args.g_lr, 0.0, 0, args.max_iter)
+    dis_scheduler = LinearLrDecay(dis_optimizer, args.d_lr, 0.0, 0, args.max_iter)
 
     # epoch number for dis_net
-    args.max_epoch = args.max_epoch * args.n_critic
+    args.max_epoch = args.max_epoch
 
     train_set = unimib_load_dataset(incl_xyz_accel = True, incl_rms_accel = False, incl_val_group = False, is_normalize = True, one_hot_encode = False, data_mode = 'Train', single_class = True, class_name = args.class_name, augment_times=args.augment_times)
     train_loader = data.DataLoader(train_set, batch_size=args.batch_size, num_workers=args.num_workers, shuffle = True)
@@ -95,7 +94,7 @@ def main():
     print(len(train_loader))
     
     if args.max_iter:
-        args.max_epoch = np.ceil(args.max_iter * args.n_critic / len(train_loader))
+        args.max_epoch = np.ceil(args.max_iter / len(train_loader))
 
     # initial
     fixed_z = torch.tensor(np.random.normal(0, 1, (100, args.latent_dim))).to(device, dtype=torch.float32)

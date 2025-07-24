@@ -105,11 +105,6 @@ def parse_args():
         default=3,
         help='number of image channels')
     parser.add_argument(
-        '--n_critic',
-        type=int,
-        default=1,
-        help='number of training steps for discriminator per iter')
-    parser.add_argument(
         '--val_freq',
         type=int,
         default=20,

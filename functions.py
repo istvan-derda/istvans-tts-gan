@@ -247,7 +247,7 @@ def train(args, gen_net: nn.Module, dis_net: nn.Module, gen_optimizer, dis_optim
         # -----------------
         #  Train Generator
         # -----------------
-        if global_steps % (args.n_critic * args.accumulated_times) == 0:
+        if global_steps % (args.accumulated_times) == 0:
             
             for accumulated_idx in range(args.g_accumulated_times):
                 gen_z = torch.tensor(np.random.normal(0, 1, (args.gen_batch_size, args.latent_dim))).to(device, dtype=torch.float32)
