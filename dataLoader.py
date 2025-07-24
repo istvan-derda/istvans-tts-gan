@@ -43,7 +43,6 @@ from shutil import unpack_archive # to unzip
 #from shutil import make_archive # to create zip for storage
 import requests #for downloading zip file
 from scipy import io #for loadmat, matlab conversion
-import pandas as pd
 import numpy as np
 #import matplotlib.pyplot as plt # for plotting - pandas uses matplotlib
 from tabulate import tabulate # for verbose tables
@@ -51,7 +50,7 @@ from tabulate import tabulate # for verbose tables
 
 #credit https://stackoverflow.com/questions/9419162/download-returned-zip-file-from-url
 #many other methods I tried failed to download the file properly
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset
 
 #data augmentation
 import tsaug

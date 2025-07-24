@@ -373,9 +373,7 @@ def validate(args, fixed_z, fid_stat, epoch, gen_net: nn.Module, writer_dict, cl
     logger.info('=> calculate inception score')
     mean, std = 0, 0
     print(f"Inception score: {mean}")
-    # get fid score
-    print('=> calculate fid score')
- 
+    # get fid score 
     fid_score = get_fid(args, fid_stat, epoch, gen_net, args.num_eval_imgs, args.gen_batch_size, args.eval_batch_size, writer_dict=writer_dict, cls_idx=None)
     print(f"FID score: {fid_score}")
 
