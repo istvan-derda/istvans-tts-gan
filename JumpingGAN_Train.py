@@ -38,7 +38,6 @@ os.system(f"CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python train_GAN.py \
 --batch_size 16 \
 --num_eval_imgs 50000 \
 --init_type xavier_uniform \
---print_freq 50 \
 --grow_steps 0 0 \
 --fade_in 0 \
 --patch_size 2 \
