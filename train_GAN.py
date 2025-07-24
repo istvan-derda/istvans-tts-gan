@@ -33,6 +33,7 @@ from torchvision.transforms import ToTensor
 
 # torch.backends.cudnn.enabled = True
 # torch.backends.cudnn.benchmark = True
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def main():
@@ -209,7 +210,7 @@ def main_worker(gpu, ngpus_per_node, args):
         args.max_epoch = np.ceil(args.max_iter * args.n_critic / len(train_loader))
 
     # initial
-    fixed_z = torch.cuda.FloatTensor(np.random.normal(0, 1, (100, args.latent_dim)))
+    fixed_z = torch.tensor(np.random.normal(0, 1, (100, args.latent_dim))).to(device, dtype=torch.float32)
     avg_gen_net = deepcopy(gen_net).cpu()
     gen_avg_param = copy_params(avg_gen_net)
     del avg_gen_net
@@ -322,9 +323,9 @@ def main_worker(gpu, ngpus_per_node, args):
             'epoch': epoch + 1,
             'gen_model': args.gen_model,
             'dis_model': args.dis_model,
-            'gen_state_dict': gen_net.module.state_dict(),
-            'dis_state_dict': dis_net.module.state_dict(),
-            'avg_gen_state_dict': avg_gen_net.module.state_dict(),
+            'gen_state_dict': gen_net.state_dict(),
+            'dis_state_dict': dis_net.state_dict(),
+            'avg_gen_state_dict': avg_gen_net.state_dict(),
             'gen_optimizer': gen_optimizer.state_dict(),
             'dis_optimizer': dis_optimizer.state_dict(),
             'best_fid': best_fid,
