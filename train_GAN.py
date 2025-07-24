@@ -83,9 +83,6 @@ def main():
     gen_scheduler = LinearLrDecay(gen_optimizer, args.g_lr, 0.0, 0, args.max_iter)
     dis_scheduler = LinearLrDecay(dis_optimizer, args.d_lr, 0.0, 0, args.max_iter)
 
-    # epoch number for dis_net
-    args.max_epoch = args.max_epoch
-
     train_set = unimib_load_dataset(incl_xyz_accel = True, incl_rms_accel = False, incl_val_group = False, is_normalize = True, one_hot_encode = False, data_mode = 'Train', single_class = True, class_name = args.class_name, augment_times=args.augment_times)
     train_loader = data.DataLoader(train_set, batch_size=args.batch_size, num_workers=args.num_workers, shuffle = True)
     test_set = unimib_load_dataset(incl_xyz_accel = True, incl_rms_accel = False, incl_val_group = False, is_normalize = True, one_hot_encode = False, data_mode = 'Test', single_class = True, class_name = args.class_name)
@@ -153,11 +150,6 @@ def main():
         
         train(args, gen_net, dis_net, gen_optimizer, dis_optimizer, gen_avg_param, train_loader, epoch, writer_dict,fixed_z, lr_schedulers)
         
-        if args.show:
-            backup_param = copy_params(gen_net)
-            load_params(gen_net, gen_avg_param, args, mode="cpu")
-            save_samples(args, fixed_z, fid_stat, epoch, gen_net, writer_dict)
-            load_params(gen_net, backup_param, args)
 
 
 #TO DO: Validate add synthetic data plot in tensorboard 

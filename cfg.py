@@ -271,8 +271,7 @@ def parse_args():
                         help='generator mlp ratio')
     parser.add_argument('--d_window_size', type=int, default=8,
                         help='discriminator mlp ratio')
-    parser.add_argument('--show', action='store_true',
-                    help='show')
+
 
     opt = parser.parse_args()
 
