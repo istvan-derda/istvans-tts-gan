@@ -48,8 +48,6 @@ parser.add_argument('--dims', type=int, default=2048,
                     choices=list(InceptionV3.BLOCK_INDEX_BY_DIM),
                     help=('Dimensionality of Inception features to use. '
                           'By default, uses pool3 features'))
-parser.add_argument('-c', '--gpu', default='1', type=str,
-                    help='GPU to use (leave blank for CPU only)')
 
 def _get_no_grad_ctx_mgr(require_grad):
     """Returns a the `torch.no_grad` context manager for PyTorch version >=

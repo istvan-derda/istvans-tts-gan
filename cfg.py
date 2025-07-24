@@ -20,8 +20,6 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--seed', default=12345, type=int,
                         help='seed for initializing training. ')
-    parser.add_argument('--gpu', default=None, type=int,
-                        help='GPU id to use.')
     parser.add_argument(
         '--max_epoch',
         type=int,
