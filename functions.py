@@ -317,11 +317,6 @@ def train(args, gen_net: nn.Module, dis_net: nn.Module, gen_optimizer, dis_optim
         # verbose
         if gen_step and iter_idx % args.print_freq == 0:
             sample_imgs = torch.cat((gen_imgs[:16], real_imgs[:16]), dim=0)
-#             scale_factor = args.img_size // int(sample_imgs.size(3))
-#             sample_imgs = torch.nn.functional.interpolate(sample_imgs, scale_factor=2)
-#             img_grid = make_grid(sample_imgs, nrow=4, normalize=True, scale_each=True)
-#             save_image(sample_imgs, f'sampled_images_{args.exp_name}.jpg', nrow=4, normalize=True, scale_each=True)
-            # writer.add_image(f'sampled_images_{args.exp_name}', img_grid, global_steps)
             tqdm.write(
                 "[Epoch %d/%d] [Batch %d/%d] [D loss: %f] [G loss: %f] [ema: %f] " %
                 (epoch, args.max_epoch, iter_idx % len(train_loader), len(train_loader), d_loss.item(), g_loss.item(), ema_beta))

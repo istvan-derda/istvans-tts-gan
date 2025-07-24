@@ -93,16 +93,6 @@ def parse_args():
         default=128,
         help='dimensionality of the latent space')
     parser.add_argument(
-        '--img_size',
-        type=int,
-        default=32,
-        help='size of each image dimension')
-    parser.add_argument(
-        '--channels',
-        type=int,
-        default=3,
-        help='number of image channels')
-    parser.add_argument(
         '--val_freq',
         type=int,
         default=20,
