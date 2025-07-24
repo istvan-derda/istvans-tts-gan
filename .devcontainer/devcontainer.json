@@ -1,0 +1,23 @@
+{
+  "name": "TTS-GAN",
+  "build": { "dockerfile": "Dockerfile" },
+  "customizations": {
+    "vscode": {
+      "extensions": ["ms-toolsai.jupyter"],
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python"
+      }
+    }
+  },
+
+  "remoteUser": "root",
+  "mounts": [
+  "source=${localEnv:HOME}/.ssh,target=/root/.ssh,type=bind",
+  "source=${localEnv:HOME}/.gitconfig,target=/root/.gitconfig,type=bind"
+],
+
+  "features": {
+    "ghcr.io/guiyomh/features/just:0": {},
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  }
+}
