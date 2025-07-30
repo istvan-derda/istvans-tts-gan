@@ -261,6 +261,6 @@ def parse_args():
                         help='discriminator mlp ratio')
 
 
-    opt = parser.parse_args()
+    opt, _ = parser.parse_known_args()
 
     return opt
