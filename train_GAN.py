@@ -37,6 +37,7 @@ def load_train_data():
 
 def train_tts_gan(train_data):
     args = cfg.parse_args()
+    print(train_data.shape)
     
     if args.seed is not None:
         torch.manual_seed(args.random_seed)
