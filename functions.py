@@ -138,8 +138,8 @@ def train(args, gen_net: nn.Module, dis_net: nn.Module, gen_optimizer, dis_optim
     
     dis_optimizer.zero_grad()
     gen_optimizer.zero_grad()
-    for iter_idx, train_data in enumerate(tqdm(train_loader)):
-        imgs = train_data[0]
+    for iter_idx, train_batch in enumerate(tqdm(train_loader)):
+        imgs = train_batch
         global_steps = writer_dict['train_global_steps']
         
 

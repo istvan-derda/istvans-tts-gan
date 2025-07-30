@@ -32,8 +32,9 @@ def main():
 
 def load_train_data():
     args = cfg.parse_args()
-    return unimib_load_dataset(incl_xyz_accel = True, incl_rms_accel = False, incl_val_group = False, is_normalize = True, one_hot_encode = False, data_mode = 'Train', single_class = True, class_name = args.class_name, augment_times=args.augment_times)
-
+    data = unimib_load_dataset(incl_xyz_accel = True, incl_rms_accel = False, incl_val_group = False, is_normalize = True, one_hot_encode = False, data_mode = 'Train', single_class = True, class_name = args.class_name, augment_times=args.augment_times)
+    data = [datapoint for datapoint, _ in data]
+    return np.array(data)
 
 def train_tts_gan(train_data):
     args = cfg.parse_args()
