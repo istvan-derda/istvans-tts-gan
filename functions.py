@@ -99,49 +99,21 @@ def train_d(args, gen_net: nn.Module, dis_net: nn.Module, dis_optimizer, train_l
         fake_validity = dis_net(fake_imgs)
 
         # cal loss
-        if args.loss == 'hinge':
+        if isinstance(fake_validity, list):
             d_loss = 0
-            d_loss = torch.mean(nn.ReLU(inplace=True)(1.0 - real_validity)) + \
-                    torch.mean(nn.ReLU(inplace=True)(1 + fake_validity))
-        elif args.loss == 'standard':
-            #soft label
-            real_label = torch.full((imgs.shape[0],), 0.9, dtype=torch.float, device=real_imgs.device)
-            fake_label = torch.full((imgs.shape[0],), 0.1, dtype=torch.float, device=real_imgs.device)
-            real_validity = nn.Sigmoid()(real_validity.view(-1))
-            fake_validity = nn.Sigmoid()(fake_validity.view(-1))
-            d_real_loss = nn.BCELoss()(real_validity, real_label)
-            d_fake_loss = nn.BCELoss()(fake_validity, fake_label)
-            d_loss = d_real_loss + d_fake_loss
-        elif args.loss == 'lsgan':
-            if isinstance(fake_validity, list):
-                d_loss = 0
-                for real_validity_item, fake_validity_item in zip(real_validity, fake_validity):
-                    real_label = torch.full((real_validity_item.shape[0],real_validity_item.shape[1]), 1., dtype=torch.float, device=real_imgs.device)
-                    fake_label = torch.full((real_validity_item.shape[0],real_validity_item.shape[1]), 0., dtype=torch.float, device=real_imgs.device)
-                    d_real_loss = nn.MSELoss()(real_validity_item, real_label)
-                    d_fake_loss = nn.MSELoss()(fake_validity_item, fake_label)
-                    d_loss += d_real_loss + d_fake_loss
-            else:
-                real_label = torch.full((real_validity.shape[0],real_validity.shape[1]), 1., dtype=torch.float, device=real_imgs.device)
-                fake_label = torch.full((real_validity.shape[0],real_validity.shape[1]), 0., dtype=torch.float, device=real_imgs.device)
-                d_real_loss = nn.MSELoss()(real_validity, real_label)
-                d_fake_loss = nn.MSELoss()(fake_validity, fake_label)
-                d_loss = d_real_loss + d_fake_loss
-        elif args.loss == 'wgangp':
-            gradient_penalty = compute_gradient_penalty(dis_net, real_imgs, fake_imgs.detach(), args.phi)
-            d_loss = -torch.mean(real_validity) + torch.mean(fake_validity) + gradient_penalty * 10 / (
-                    args.phi ** 2)
-        elif args.loss == 'wgangp-mode':
-            gradient_penalty = compute_gradient_penalty(dis_net, real_imgs, fake_imgs.detach(), args.phi)
-            d_loss = -torch.mean(real_validity) + torch.mean(fake_validity) + gradient_penalty * 10 / (
-                    args.phi ** 2)
-        elif args.loss == 'wgangp-eps':
-            gradient_penalty = compute_gradient_penalty(dis_net, real_imgs, fake_imgs.detach(), args.phi)
-            d_loss = -torch.mean(real_validity) + torch.mean(fake_validity) + gradient_penalty * 10 / (
-                    args.phi ** 2)
-            d_loss += (torch.mean(real_validity) ** 2) * 1e-3
+            for real_validity_item, fake_validity_item in zip(real_validity, fake_validity):
+                real_label = torch.full((real_validity_item.shape[0],real_validity_item.shape[1]), 1., dtype=torch.float, device=real_imgs.device)
+                fake_label = torch.full((real_validity_item.shape[0],real_validity_item.shape[1]), 0., dtype=torch.float, device=real_imgs.device)
+                d_real_loss = nn.MSELoss()(real_validity_item, real_label)
+                d_fake_loss = nn.MSELoss()(fake_validity_item, fake_label)
+                d_loss += d_real_loss + d_fake_loss
         else:
-            raise NotImplementedError(args.loss)
+            real_label = torch.full((real_validity.shape[0],real_validity.shape[1]), 1., dtype=torch.float, device=real_imgs.device)
+            fake_label = torch.full((real_validity.shape[0],real_validity.shape[1]), 0., dtype=torch.float, device=real_imgs.device)
+            d_real_loss = nn.MSELoss()(real_validity, real_label)
+            d_fake_loss = nn.MSELoss()(fake_validity, fake_label)
+            d_loss = d_real_loss + d_fake_loss
+
         d_loss = d_loss/float(args.accumulated_times)
         d_loss.backward()
         
