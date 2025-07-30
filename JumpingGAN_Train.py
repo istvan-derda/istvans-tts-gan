@@ -25,7 +25,6 @@ os.system(f"CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python train_GAN.py \
 --dropout 0 \
 --latent_dim 100 \
 --gf_dim 1024 \
---num_workers 16 \
 --g_lr 0.0001 \
 --d_lr 0.0003 \
 --optimizer adam \

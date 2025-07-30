@@ -83,11 +83,6 @@ def parse_args():
         default=0.9,
         help='adam: decay of first order momentum of gradient')
     parser.add_argument(
-        '--num_workers',
-        type=int,
-        default=2,
-        help='number of cpu threads to use during batch generation')
-    parser.add_argument(
         '--latent_dim',
         type=int,
         default=128,

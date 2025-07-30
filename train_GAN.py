@@ -20,6 +20,7 @@ import matplotlib.pyplot as plt
 import io
 import PIL.Image
 from torchvision.transforms import ToTensor
+import multiprocessing
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -75,7 +76,7 @@ def train_tts_gan(train_data):
     gen_scheduler = LinearLrDecay(gen_optimizer, args.g_lr, 0.0, 0, args.max_iter)
     dis_scheduler = LinearLrDecay(dis_optimizer, args.d_lr, 0.0, 0, args.max_iter)
 
-    train_loader = data.DataLoader(train_data, batch_size=args.batch_size, num_workers=args.num_workers, shuffle = True)
+    train_loader = data.DataLoader(train_data, batch_size=args.batch_size, num_workers=min(8, multiprocessing.cpu_count()), shuffle = True)
  
     args.max_epoch = np.ceil(args.max_iter / len(train_loader))
 
