@@ -207,7 +207,7 @@ def parse_args():
                         help='classes')
     parser.add_argument('--phi', type=float, default=1,
                         help='wgan-gp phi')
-    parser.add_argument('--grow_steps', nargs='+', type=int,
+    parser.add_argument('--grow_steps', nargs='+', type=int, default=[0, 0],
                         help='the vector of a discovered architecture')
     parser.add_argument('--D_downsample', type=str, default="avg",
                         help='downsampling type')
