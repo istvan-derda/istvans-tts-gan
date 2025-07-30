@@ -6,7 +6,7 @@ import cfg
 from dataLoader import *
 from GANModels import * 
 from functions import train, LinearLrDecay, load_params, copy_params, cur_stages
-from utils.utils import set_log_dir, save_checkpoint, create_logger
+from utils.utils import set_log_dir, save_checkpoint
 
 import torch
 from torch.utils import data
