@@ -16,7 +16,6 @@ os.system(f"CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python train_GAN.py \
 -dis_bs 16 \
 --dataset UniMiB \
 --bottom_width 8 \
---max_iter 500000 \
 --gen_model my_gen \
 --dis_model my_dis \
 --df_dim 384 \

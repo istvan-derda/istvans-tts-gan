@@ -75,8 +75,7 @@ def train_tts_gan(train_data):
 
     train_loader = data.DataLoader(train_data, batch_size=args.batch_size, num_workers=args.num_workers, shuffle = True)
  
-    if args.max_iter:
-        args.max_epoch = np.ceil(args.max_iter / len(train_loader))
+    args.max_epoch = np.ceil(args.max_iter / len(train_loader))
 
     # initial
     fixed_z = torch.tensor(np.random.normal(0, 1, (100, args.latent_dim))).to(device, dtype=torch.float32)
