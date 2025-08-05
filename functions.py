@@ -65,69 +65,6 @@ def compute_gradient_penalty(D, real_samples, fake_samples, phi):
     gradient_penalty = ((gradients.norm(2, dim=1) - phi) ** 2).mean()
     return gradient_penalty
 
-
-def train_d(args, gen_net: nn.Module, dis_net: nn.Module, dis_optimizer, train_loader, epoch, writer_dict,fixed_z, schedulers=None):
-    writer = writer_dict['writer']
-#     gen_step = 0
-    # train mode
-    dis_net.train()
-    
-    dis_optimizer.zero_grad()
-    
-    for iter_idx, (imgs, _) in enumerate(tqdm(train_loader)):
-        global_steps = writer_dict['train_global_steps']
-        
-
-        # Adversarial ground truths
-        real_imgs = imgs.type(torch.cuda.FloatTensor).cuda(None, non_blocking=True)
-
-        # Sample noise as generator input
-        z = torch.cuda.FloatTensor(np.random.normal(0, 1, (imgs.shape[0], args.latent_dim))).cuda(None, non_blocking=True)
-
-        # ---------------------
-        #  Train Discriminator
-        # ---------------------
-        
-
-        real_validity = dis_net(real_imgs)
-        fake_imgs = gen_net(z).detach()
-        
-        assert fake_imgs.size() == real_imgs.size(), f"fake_imgs.size(): {fake_imgs.size()} real_imgs.size(): {real_imgs.size()}"
-
-        fake_validity = dis_net(fake_imgs)
-
-        # cal loss
-        if isinstance(fake_validity, list):
-            d_loss = 0
-            for real_validity_item, fake_validity_item in zip(real_validity, fake_validity):
-                real_label = torch.full((real_validity_item.shape[0],real_validity_item.shape[1]), 1., dtype=torch.float, device=real_imgs.device)
-                fake_label = torch.full((real_validity_item.shape[0],real_validity_item.shape[1]), 0., dtype=torch.float, device=real_imgs.device)
-                d_real_loss = nn.MSELoss()(real_validity_item, real_label)
-                d_fake_loss = nn.MSELoss()(fake_validity_item, fake_label)
-                d_loss += d_real_loss + d_fake_loss
-        else:
-            real_label = torch.full((real_validity.shape[0],real_validity.shape[1]), 1., dtype=torch.float, device=real_imgs.device)
-            fake_label = torch.full((real_validity.shape[0],real_validity.shape[1]), 0., dtype=torch.float, device=real_imgs.device)
-            d_real_loss = nn.MSELoss()(real_validity, real_label)
-            d_fake_loss = nn.MSELoss()(fake_validity, fake_label)
-            d_loss = d_real_loss + d_fake_loss
-
-        d_loss = d_loss/float(args.accumulated_times)
-        d_loss.backward()
-        
-        if (iter_idx + 1) % args.accumulated_times == 0:
-            torch.nn.utils.clip_grad_norm_(dis_net.parameters(), 5.)
-            dis_optimizer.step()
-            dis_optimizer.zero_grad()
-
-            writer.add_scalar('d_loss', d_loss.item(), global_steps)
-
-        tqdm.write( "[Epoch %d/%d] [Batch %d/%d] [D loss: %f]" %
-        (epoch, args.max_epoch, iter_idx % len(train_loader), len(train_loader), d_loss.item()))
-    
-        writer_dict['train_global_steps'] = global_steps + 1 
-
-
 def train(args, gen_net: nn.Module, dis_net: nn.Module, gen_optimizer, dis_optimizer, gen_avg_param, train_loader,
           epoch, writer_dict, fixed_z, schedulers=None):
     writer = writer_dict['writer']
