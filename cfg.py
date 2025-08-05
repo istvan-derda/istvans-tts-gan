@@ -85,7 +85,7 @@ def parse_args():
     parser.add_argument(
         '--latent_dim',
         type=int,
-        default=128,
+        default=100,
         help='dimensionality of the latent space')
     parser.add_argument(
         '--val_freq',

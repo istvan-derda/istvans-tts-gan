@@ -52,7 +52,7 @@ def train_tts_gan(train_data, patch_size, seq_len, in_channels):
 
     # import network
     
-    gen_net = Generator(patch_size=patch_size, seq_len=seq_len, channels=in_channels)
+    gen_net = Generator(patch_size=patch_size, seq_len=seq_len, channels=in_channels, latent_dim=args.latent_dim)
     dis_net = Discriminator(patch_size=patch_size, seq_length=seq_len, in_channels=in_channels)
     if not torch.cuda.is_available():
         print('using CPU, this will be slow')
