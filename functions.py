@@ -66,7 +66,7 @@ def compute_gradient_penalty(D, real_samples, fake_samples, phi):
     return gradient_penalty
 
 def train(args, gen_net: nn.Module, dis_net: nn.Module, gen_optimizer, dis_optimizer, gen_avg_param, train_loader,
-          epoch, writer_dict, fixed_z, schedulers=None):
+          epoch, writer_dict, schedulers=None):
     writer = writer_dict['writer']
     gen_step = 0
     # train mode

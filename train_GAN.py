@@ -81,7 +81,6 @@ def train_tts_gan(train_data, patch_size):
     args.max_epoch = np.ceil(args.max_iter / len(train_loader))
 
     # initial
-    fixed_z = torch.tensor(np.random.normal(0, 1, (100, args.latent_dim))).to(device, dtype=torch.float32)
     avg_gen_net = deepcopy(gen_net).cpu()
     gen_avg_param = copy_params(avg_gen_net)
     del avg_gen_net
@@ -108,7 +107,6 @@ def train_tts_gan(train_data, patch_size):
         gen_net.load_state_dict(checkpoint['avg_gen_state_dict'])
         gen_avg_param = copy_params(gen_net, mode='gpu')
         gen_net.load_state_dict(checkpoint['gen_state_dict'])
-        fixed_z = checkpoint['fixed_z']
 
         args.path_helper = checkpoint['path_helper']
         print(f'=> loaded checkpoint {checkpoint_file} (epoch {start_epoch})')
@@ -133,7 +131,7 @@ def train_tts_gan(train_data, patch_size):
         print("cur_stage " + str(cur_stage))
         print(f"path: {args.path_helper['prefix']}")
         
-        train(args, gen_net, dis_net, gen_optimizer, dis_optimizer, gen_avg_param, train_loader, epoch, writer_dict,fixed_z, lr_schedulers)
+        train(args, gen_net, dis_net, gen_optimizer, dis_optimizer, gen_avg_param, train_loader, epoch, writer_dict, lr_schedulers)
         
         #TO DO: Validate add synthetic data plot in tensorboard 
         gen_net.eval()
@@ -157,7 +155,6 @@ def train_tts_gan(train_data, patch_size):
             'dis_optimizer': dis_optimizer.state_dict(),
             'best_fid': best_fid,
             'path_helper': args.path_helper,
-            'fixed_z': fixed_z
         }, is_best, args.path_helper['ckpt_path'], filename="checkpoint")
         del avg_gen_net
 
