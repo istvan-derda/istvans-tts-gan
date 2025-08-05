@@ -28,7 +28,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 def main():
     train_data = load_train_data()
 
-    train_tts_gan(train_data, 15)
+    train_tts_gan(train_data, patch_size=15, seq_len=150, in_channels=3)
 
 
 def load_train_data():
@@ -37,7 +37,7 @@ def load_train_data():
     data = [datapoint for datapoint, _ in data]
     return np.array(data)
 
-def train_tts_gan(train_data, patch_size):
+def train_tts_gan(train_data, patch_size, seq_len, in_channels):
     args = cfg.parse_args()
     print(train_data.shape)
     
@@ -52,8 +52,8 @@ def train_tts_gan(train_data, patch_size):
 
     # import network
     
-    gen_net = Generator(patch_size=patch_size)
-    dis_net = Discriminator(patch_size=patch_size)
+    gen_net = Generator(patch_size=patch_size, seq_len=seq_len, channels=in_channels)
+    dis_net = Discriminator(patch_size=patch_size, seq_length=seq_len, in_channels=in_channels)
     if not torch.cuda.is_available():
         print('using CPU, this will be slow')
     else:
