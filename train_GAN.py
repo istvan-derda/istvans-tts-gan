@@ -76,7 +76,7 @@ def train_tts_gan(train_data, patch_size, seq_len, in_channels):
     gen_scheduler = LinearLrDecay(gen_optimizer, args.g_lr, 0.0, 0, args.max_iter)
     dis_scheduler = LinearLrDecay(dis_optimizer, args.d_lr, 0.0, 0, args.max_iter)
 
-    train_loader = data.DataLoader(train_data, batch_size=args.batch_size, num_workers=min(8, multiprocessing.cpu_count()), shuffle = True)
+    train_loader = data.DataLoader(train_data, batch_size=args.batch_size, num_workers=2, shuffle = True)
  
     args.max_epoch = np.ceil(args.max_iter / len(train_loader))
 
