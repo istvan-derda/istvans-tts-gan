@@ -5,14 +5,11 @@
 # @Version : 0.0
 
 import logging
-import operator
-import os
 from copy import deepcopy
 
 import numpy as np
 import torch
 import torch.nn as nn
-from utils.utils import save_image
 from tqdm import tqdm
 
 # from utils.fid_score import calculate_fid_given_paths
@@ -238,118 +235,6 @@ def train(args, gen_net: nn.Module, dis_net: nn.Module, gen_optimizer, dis_optim
         writer_dict['train_global_steps'] = global_steps + 1 
 
 
-
-
-
-def get_is(args, gen_net: nn.Module, num_img):
-    """
-    Get inception score.
-    :param args:
-    :param gen_net:
-    :param num_img:
-    :return: Inception score
-    """
-
-    # eval mode
-    gen_net = gen_net.eval()
-
-    eval_iter = num_img // args.eval_batch_size
-    img_list = list()
-    for _ in range(eval_iter):
-        z = torch.cuda.FloatTensor(np.random.normal(0, 1, (args.eval_batch_size, args.latent_dim)))
-
-        # Generate a batch of images
-        gen_imgs = gen_net(z).mul_(127.5).add_(127.5).clamp_(0.0, 255.0).permute(0, 2, 3, 1).to('cpu',
-                                                                                                torch.uint8).numpy()
-        img_list.extend(list(gen_imgs))
-
-    # get inception score
-    logger.info('calculate Inception score...')
-    mean, std = get_inception_score(img_list)
-
-    return mean
-
-
-def validate(args, fixed_z, fid_stat, epoch, gen_net: nn.Module, writer_dict, clean_dir=True):
-    writer = writer_dict['writer']
-    global_steps = writer_dict['valid_global_steps']
-
-    # eval mode
-    gen_net.eval()
-
-    # get inception score
-    logger.info('=> calculate inception score')
-    mean, std = 0, 0
-    print(f"Inception score: {mean}")
-    # get fid score 
-    fid_score = get_fid(args, fid_stat, epoch, gen_net, args.num_eval_imgs, args.gen_batch_size, args.eval_batch_size, writer_dict=writer_dict, cls_idx=None)
-    print(f"FID score: {fid_score}")
-
-    writer.add_scalar('Inception_score/mean', mean, global_steps)
-    writer.add_scalar('Inception_score/std', std, global_steps)
-    writer.add_scalar('FID_score', fid_score, global_steps)
-
-    writer_dict['valid_global_steps'] = global_steps + 1
-
-    return mean, fid_score
-
-
-def save_samples(args, fixed_z, fid_stat, epoch, gen_net: nn.Module, writer_dict, clean_dir=True):
-
-    # eval mode
-    gen_net.eval()
-    with torch.no_grad():
-        # generate images
-        batch_size = fixed_z.size(0)
-        sample_imgs = []
-        for i in range(fixed_z.size(0)):
-            sample_img = gen_net(fixed_z[i:(i+1)], epoch)
-            sample_imgs.append(sample_img)
-        sample_imgs = torch.cat(sample_imgs, dim=0)
-        os.makedirs(f"./samples/{args.exp_name}", exist_ok=True)
-        save_image(sample_imgs, f'./samples/{args.exp_name}/sampled_images_{epoch}.png', nrow=10, normalize=True, scale_each=True)
-    return 0
-
-
-def get_topk_arch_hidden(args, controller, gen_net, prev_archs, prev_hiddens):
-    """
-    ~
-    :param args:
-    :param controller:
-    :param gen_net:
-    :param prev_archs: previous architecture
-    :param prev_hiddens: previous hidden vector
-    :return: a list of topk archs and hiddens.
-    """
-    logger.info(f'=> get top{args.topk} archs out of {args.num_candidate} candidate archs...')
-    assert args.num_candidate >= args.topk
-    controller.eval()
-    cur_stage = controller.cur_stage
-    archs, _, _, hiddens = controller.sample(args.num_candidate, with_hidden=True, prev_archs=prev_archs,
-                                             prev_hiddens=prev_hiddens)
-    hxs, cxs = hiddens
-    arch_idx_perf_table = {}
-    for arch_idx in range(len(archs)):
-        logger.info(f'arch: {archs[arch_idx]}')
-        gen_net.set_arch(archs[arch_idx], cur_stage)
-        is_score = get_is(args, gen_net, args.rl_num_eval_img)
-        logger.info(f'get Inception score of {is_score}')
-        arch_idx_perf_table[arch_idx] = is_score
-    topk_arch_idx_perf = sorted(arch_idx_perf_table.items(), key=operator.itemgetter(1))[::-1][:args.topk]
-    topk_archs = []
-    topk_hxs = []
-    topk_cxs = []
-    logger.info(f'top{args.topk} archs:')
-    for arch_idx_perf in topk_arch_idx_perf:
-        logger.info(arch_idx_perf)
-        arch_idx = arch_idx_perf[0]
-        topk_archs.append(archs[arch_idx])
-        topk_hxs.append(hxs[arch_idx].detach().requires_grad_(False))
-        topk_cxs.append(cxs[arch_idx].detach().requires_grad_(False))
-
-    return topk_archs, (topk_hxs, topk_cxs)
-
-
 class LinearLrDecay(object):
     def __init__(self, optimizer, start_lr, end_lr, decay_start_step, decay_end_step):
 
@@ -371,17 +256,6 @@ class LinearLrDecay(object):
             for param_group in self.optimizer.param_groups:
                 param_group['lr'] = lr
         return lr
-
-def load_params(model, new_param, args, mode="gpu"):
-    if mode == "cpu":
-        for p, new_p in zip(model.parameters(), new_param):
-            cpu_p = deepcopy(new_p)
-            p.data.copy_(cpu_p.cuda().to("cpu"))
-            del cpu_p
-    
-    else:
-        for p, new_p in zip(model.parameters(), new_param):
-            p.data.copy_(new_p)
 
 
 def copy_params(model, mode='cpu'):

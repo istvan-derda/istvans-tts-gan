@@ -5,8 +5,8 @@ from __future__ import print_function
 import cfg
 from dataLoader import *
 from GANModels import * 
-from functions import train, LinearLrDecay, load_params, copy_params, cur_stages
-from utils.utils import set_log_dir, save_checkpoint
+from functions import train, LinearLrDecay, copy_params, cur_stages
+from utils.utils import set_log_dir
 
 import torch
 from torch.utils import data
@@ -16,11 +16,7 @@ from torch.utils.tensorboard import SummaryWriter
 from copy import deepcopy
 from adamw import AdamW
 import random 
-import matplotlib.pyplot as plt
-import io
-import PIL.Image
 from torchvision.transforms import ToTensor
-import multiprocessing
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -133,53 +129,10 @@ def train_tts_gan(train_data, patch_size, seq_len, in_channels):
         
         train(args, gen_net, dis_net, gen_optimizer, dis_optimizer, gen_avg_param, train_loader, epoch, writer_dict, lr_schedulers)
         
-        #TO DO: Validate add synthetic data plot in tensorboard 
         gen_net.eval()
-        plot_buf = gen_plot(gen_net, epoch, args.class_name)
-        image = PIL.Image.open(plot_buf)
-        image = ToTensor()(image).unsqueeze(0)
-        writer.add_image('Image', image[0], epoch)
-        
-        is_best = False
-        avg_gen_net = deepcopy(gen_net)
-        load_params(avg_gen_net, gen_avg_param, args)
-        # Add module in model saving code exp'gen_net.module.state_dict()' to solve the model loading unpaired name problem
-        save_checkpoint({
-            'epoch': epoch + 1,
-            'gen_model': args.gen_model,
-            'dis_model': args.dis_model,
-            'gen_state_dict': gen_net.state_dict(),
-            'dis_state_dict': dis_net.state_dict(),
-            'avg_gen_state_dict': avg_gen_net.state_dict(),
-            'gen_optimizer': gen_optimizer.state_dict(),
-            'dis_optimizer': dis_optimizer.state_dict(),
-            'best_fid': best_fid,
-            'path_helper': args.path_helper,
-        }, is_best, args.path_helper['ckpt_path'], filename="checkpoint")
-        del avg_gen_net
 
     return gen_net
-        
-def gen_plot(gen_net, epoch, class_name):
-    """Create a pyplot plot and save to buffer."""
-    synthetic_data = [] 
 
-    for i in range(10):
-        fake_noise = torch.FloatTensor(np.random.normal(0, 1, (1, 100)))
-        fake_sigs = gen_net(fake_noise).to('cpu').detach().numpy()
-        synthetic_data.append(fake_sigs)
-
-    fig, axs = plt.subplots(2, 5, figsize=(20,5))
-    fig.suptitle(f'Synthetic {class_name} at epoch {epoch}', fontsize=30)
-    for i in range(2):
-        for j in range(5):
-            axs[i, j].plot(synthetic_data[i*5+j][0][0][0][:])
-            axs[i, j].plot(synthetic_data[i*5+j][0][1][0][:])
-            axs[i, j].plot(synthetic_data[i*5+j][0][2][0][:])
-    buf = io.BytesIO()
-    plt.savefig(buf, format='jpeg')
-    buf.seek(0)
-    return buf
 
 if __name__ == '__main__':
     main()
