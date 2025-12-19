@@ -233,7 +233,7 @@ def parse_args():
                         help='the vector of a discovered architecture')
     parser.add_argument('--optimizer', type=str, default="adam",
                         help='optimizer')
-    parser.add_argument('--loss', type=str, default="hinge",
+    parser.add_argument('--loss', type=str, default="lsgan",
                         help='loss function')
     parser.add_argument('--n_classes', type=int, default=0,
                         help='classes')
