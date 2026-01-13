@@ -18,25 +18,8 @@ def str2bool(v):
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--world-size', default=-1, type=int,
-                    help='number of nodes for distributed training')
-    parser.add_argument('--rank', default=-1, type=int,
-                        help='node rank for distributed training')
-    parser.add_argument('--loca_rank', default=-1, type=int,
-                        help='node rank for distributed training')
-    parser.add_argument('--dist-url', default='tcp://224.66.41.62:23456', type=str,
-                        help='url used to set up distributed training')
-    parser.add_argument('--dist-backend', default='nccl', type=str,
-                        help='distributed backend')
     parser.add_argument('--seed', default=12345, type=int,
                         help='seed for initializing training. ')
-    parser.add_argument('--gpu', default=None, type=int,
-                        help='GPU id to use.')
-    parser.add_argument('--multiprocessing-distributed', action='store_true',
-                    help='Use multi-processing distributed training to launch '
-                         'N processes per node, which has N GPUs. This is the '
-                         'fastest way to use PyTorch for either single node or '
-                         'multi node data parallel training')
     parser.add_argument(
         '--max_epoch',
         type=int,
@@ -45,7 +28,7 @@ def parse_args():
     parser.add_argument(
         '--max_iter',
         type=int,
-        default=None,
+        default=500000,
         help='set the max iteration number')
     parser.add_argument(
         '-gen_bs',
@@ -100,30 +83,10 @@ def parse_args():
         default=0.9,
         help='adam: decay of first order momentum of gradient')
     parser.add_argument(
-        '--num_workers',
-        type=int,
-        default=8,
-        help='number of cpu threads to use during batch generation')
-    parser.add_argument(
         '--latent_dim',
         type=int,
-        default=128,
+        default=100,
         help='dimensionality of the latent space')
-    parser.add_argument(
-        '--img_size',
-        type=int,
-        default=32,
-        help='size of each image dimension')
-    parser.add_argument(
-        '--channels',
-        type=int,
-        default=3,
-        help='number of image channels')
-    parser.add_argument(
-        '--n_critic',
-        type=int,
-        default=1,
-        help='number of training steps for discriminator per iter')
     parser.add_argument(
         '--val_freq',
         type=int,
@@ -132,7 +95,7 @@ def parse_args():
     parser.add_argument(
         '--print_freq',
         type=int,
-        default=100,
+        default=50,
         help='interval between each verbose')
     parser.add_argument(
         '--load_path',
@@ -239,7 +202,7 @@ def parse_args():
                         help='classes')
     parser.add_argument('--phi', type=float, default=1,
                         help='wgan-gp phi')
-    parser.add_argument('--grow_steps', nargs='+', type=int,
+    parser.add_argument('--grow_steps', nargs='+', type=int, default=[0, 0],
                         help='the vector of a discovered architecture')
     parser.add_argument('--D_downsample', type=str, default="avg",
                         help='downsampling type')
@@ -291,9 +254,8 @@ def parse_args():
                         help='generator mlp ratio')
     parser.add_argument('--d_window_size', type=int, default=8,
                         help='discriminator mlp ratio')
-    parser.add_argument('--show', action='store_true',
-                    help='show')
 
-    opt = parser.parse_args()
+
+    opt, _ = parser.parse_known_args()
 
     return opt

@@ -182,7 +182,7 @@ class PatchEmbedding_Linear(nn.Module):
         self.positions = nn.Parameter(torch.randn((seq_length // patch_size) + 1, emb_size))
 
     def forward(self, x: Tensor) -> Tensor:
-        b, _, _, _ = x.shape
+        b = x.shape[0]
         x = self.projection(x)
         cls_tokens = repeat(self.cls_token, '() n e -> b n e', b=b)
         #prepend the cls token to the input
